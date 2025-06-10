@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "Open index.html",
+            "file": "c:\\Users\\madsc\\Documents\\Projects\\noodle-art\\www\\index.html"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Edge against localhost",
+            "url": "http://localhost:3000/",
+            "webRoot": "${workspaceFolder}/www" // Optional: Helps map files from the server to your workspace
+        }
+    ]
+}

@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Noodle Art</title>
+    <link rel="stylesheet" href="css/index.css">
+    <!-- External Libraries -->
+    <script type="text/javascript" src="js/GIFEncoder.js"></script>
+    <script type="text/javascript" src="js/LZWEncoder.js"></script>
+    <script type="text/javascript" src="js/NeuQuant.js"></script>
+    <script src="js/interact.min.js"></script>
+    <script src="js/tween.umd.js"></script> <!-- Tween.js -->
+
+    <!-- <script type="module" src="components/floating-button.js"></script> -->
+</head>
+
+<body>
+
+    <main id="canvas-container"><canvas id="paint-canvas"></canvas></main>
+
+    <!-- Floating UI Elements -->
+    <div id="controls-toggle" class="floating-button draggable">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+            <path fill-rule="evenodd"
+                d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
+                clip-rule="evenodd" />
+        </svg>
+    </div>
+    <div id="animation-toggle" class="floating-button draggable">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M9 4.804A7.968 7.968 0 0010 4c3.314 0 6 2.686 6 6s-2.686 6-6 6a7.968 7.968 0 00-1 .196V4.804z" />
+            <path
+                d="M12 9.5a.5.5 0 01.5.5v1a.5.5 0 01-1 0V10a.5.5 0 01.5-.5zM5 10a.5.5 0 01.5-.5h1a.5.5 0 010 1H5.5A.5.5 0 015 10zm-2 3a.5.5 0 000 1h1.5a.5.5 0 000-1H3zm12-3a.5.5 0 01.5-.5h1a.5.5 0 010 1h-1a.5.5 0 01-.5-.5z" />
+        </svg>
+    </div>
+    <div id="video-toggle" class="floating-button draggable">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path
+                d="M3.25 4A2.25 2.25 0 001 6.25v7.5A2.25 2.25 0 003.25 16h13.5A2.25 2.25 0 0019 13.75v-7.5A2.25 2.25 0 0016.75 4H3.25zM15 8.75a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5zM6.5 8.75a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5zM9.5 7a.75.75 0 00-1.5 0v6a.75.75 0 001.5 0V7z" />
+        </svg>
+    </div>
+    <div id="floating-snapshot-button" class="floating-button draggable">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z"
+                clip-rule="evenodd" />
+        </svg>
+    </div>
+    <div id="playback-toggle" class="floating-button draggable">
+        <!-- Distinct color (Orange) -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path
+                d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+        </svg>
+    </div>
+
+    <!-- Controls Panel -->
+    <div id="controls-panel" class="panel draggable">
+        <div class="panel-header">
+            <h2>Controls</h2>
+            <button id="close-controls" class="close-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="panel-content">
+            <div class="grid-3">
+                <button id="new-project-button" class="button btn-blue">New</button>
+                <button id="save-project-button" class="button btn-dark-gray">Save</button>
+                <button id="load-project-button" class="button btn-gray">Load</button>
+                <input type="file" id="load-project-input" class="hidden" accept=".json">
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="noodle-color">Noodle Color</label>
+                    <input type="color" id="noodle-color" value="#3b82f6">
+                </div>
+                <div class="form-group">
+                    <label for="background-color">Background Color</label>
+                    <input type="color" id="background-color" value="#ffffff">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="noodle-width">Width: <span id="width-value">10</span>px</label>
+                <input type="range" id="noodle-width" min="1" max="50" value="10">
+            </div>
+            <div class="grid-2">
+                <div class="flex-between">
+                    <label>Animation Mode</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="animation-mode-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="flex-between">
+                    <label>Video Mode</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="video-mode-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="grid-2">
+                <button id="undo-button" class="button btn-light-gray">Undo</button>
+                <button id="redo-button" class="button btn-light-gray">Redo</button>
+            </div>
+            <div class="grid-3">
+                <button id="clear-canvas" class="button btn-red">Clear</button>
+                <button id="export-png" class="button btn-green">PNG</button>
+                <button id="export-gif" class="button btn-teal">GIF</button>
+            </div>
+            <div class="mobile-playback-spacer" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Animation Panel -->
+    <div id="animation-panel" class="panel draggable">
+        <div class="panel-header">
+            <h2>Animation</h2>
+            <button id="close-animation-panel" class="close-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="panel-content">
+            <div id="frame-previews-container">
+                <div id="frame-previews"></div>
+            </div>
+            <div class="form-group">
+                <label>Smooth Animation</label>
+                <div class="input-group">
+                    <input type="number" id="interpolate-count" value="3" min="1" max="20" style="width: 60px;">
+                    <button id="interpolate-frames-button" class="button btn-purple"
+                        style="flex-grow: 1;">Smooth</button>
+                </div>
+                <button id="revert-interpolation-button" class="button btn-dark-gray hidden"
+                    style="margin-top: 8px;">Revert to Keyframes</button>
+            </div>
+            <button id="duplicate-frame-button" class="button btn-indigo">Duplicate Frame</button>
+            <button id="clear-frames" class="button btn-red">Clear All Frames</button>
+            <div class="mobile-playback-spacer" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Video Panel -->
+    <div id="video-panel" class="panel draggable">
+        <div class="panel-header">
+            <h2>Video Generator</h2>
+            <button id="close-video-panel" class="close-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="panel-content">
+            <div class="form-group">
+                <label for="video-length-input">Duration (seconds)</label>
+                <input type="number" id="video-length-input" value="5" min="1" max="60">
+            </div>
+            <div class="form-group">
+                <label for="video-fps-input">Frames Per Second (FPS)</label>
+                <input type="number" id="video-fps-input" value="30" min="1" max="60">
+            </div>
+            <button id="generate-video-button" class="button btn-green">Generate Video</button>
+            <p id="video-status-message" class="hidden"
+                style="font-size: 0.8rem; color: var(--gray-600); text-align: center; margin-top: 8px;">Status</p>
+        </div>
+        <div class="mobile-playback-spacer" style="display: none;"></div>
+    </div>
+
+    <!-- On-Screen Playback Controls -->
+    <div id="playback-controls" class="floating-button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z"
+                clip-rule="evenodd" />
+        </svg>
+        <input id="speed-slider" type="range" min="1" max="10" value="5">
+        <button id="prev-frame-button" class="p-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                    clip-rule="evenodd" />
+            </svg></button>
+        <button id="play-pause-button" class="p-btn">
+            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                    d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+            </svg>
+            <svg id="pause-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path
+                    d="M5.75 3a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5zm7 0a.75.75 0 00-.75.75v12.5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75h-1.5z" />
+            </svg>
+        </button>
+        <button id="next-frame-button" class="p-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clip-rule="evenodd" />
+            </svg></button>
+        <input id="frame-slider" type="range" min="0" max="0" value="0">
+        <span id="playback-frame-count"
+            style="color:white; width: 50px; text-align:center; font-size: 0.8rem;">0/0</span>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="modal-overlay">
+        <div id="confirm-modal" class="panel">
+            <div class="panel-header">
+                <h3 id="confirm-modal-title"></h3>
+            </div>
+            <div class="panel-content">
+                <p id="confirm-modal-message"></p>
+                <div id="confirm-modal-buttons" style="display: flex; gap: 8px; justify-content: flex-end;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const canvas = document.getElementById('paint-canvas');
+            const ctx = canvas.getContext('2d');
+            const ui = {
+                controls: {
+                    toggle: document.getElementById('controls-toggle'),
+                    panel: document.getElementById('controls-panel'),
+                    close: document.getElementById('close-controls'),
+                    newProject: document.getElementById('new-project-button'),
+                    saveProject: document.getElementById('save-project-button'),
+                    loadProject: document.getElementById('load-project-button'),
+                    loadProjectInput: document.getElementById('load-project-input'),
+                    colorPicker: document.getElementById('noodle-color'),
+                    backgroundColorPicker: document.getElementById('background-color'),
+                    widthSlider: document.getElementById('noodle-width'),
+                    widthValue: document.getElementById('width-value'),
+                    animationModeToggle: document.getElementById('animation-mode-toggle'),
+                    videoModeToggle: document.getElementById('video-mode-toggle'),
+                    undo: document.getElementById('undo-button'),
+                    redo: document.getElementById('redo-button'),
+                    clearCanvas: document.getElementById('clear-canvas'),
+                    exportPng: document.getElementById('export-png'),
+                    exportGif: document.getElementById('export-gif'),
+                },
+                animation: {
+                    toggle: document.getElementById('animation-toggle'),
+                    panel: document.getElementById('animation-panel'),
+                    close: document.getElementById('close-animation-panel'),
+                    snapshot: document.getElementById('floating-snapshot-button'),
+                    previewsContainer: document.getElementById('frame-previews'),
+                    duplicateFrame: document.getElementById('duplicate-frame-button'),
+                    clearFrames: document.getElementById('clear-frames'),
+                    interpolateCount: document.getElementById('interpolate-count'),
+                    interpolateButton: document.getElementById('interpolate-frames-button'),
+                    revertInterpolationButton: document.getElementById('revert-interpolation-button'),
+                    mobilePlaybackSpacers: document.querySelectorAll('.mobile-playback-spacer')
+                },
+                video: {
+                    toggle: document.getElementById('video-toggle'),
+                    panel: document.getElementById('video-panel'),
+                    close: document.getElementById('close-video-panel'),
+                    generateButton: document.getElementById('generate-video-button'),
+                    lengthInput: document.getElementById('video-length-input'),
+                    fpsInput: document.getElementById('video-fps-input'),
+                    statusMessage: document.getElementById('video-status-message'),
+                },
+                playback: {
+                    toggle: document.getElementById('playback-toggle'),
+                    controls: document.getElementById('playback-controls'),
+                    playPause: document.getElementById('play-pause-button'),
+                    playIcon: document.getElementById('play-icon'),
+                    pauseIcon: document.getElementById('pause-icon'),
+                    prevFrame: document.getElementById('prev-frame-button'),
+                    nextFrame: document.getElementById('next-frame-button'),
+                    frameSlider: document.getElementById('frame-slider'),
+                    speedSlider: document.getElementById('speed-slider'),
+                    frameCount: document.getElementById('playback-frame-count'),
+                },
+                modal: {
+                    overlay: document.getElementById('modal-overlay'),
+                    title: document.getElementById('confirm-modal-title'),
+                    message: document.getElementById('confirm-modal-message'),
+                    buttons: document.getElementById('confirm-modal-buttons'),
+                }
+            };
+
+            // --- Z-Index Management for Draggables ---
+            let currentMaxZIndex = 40; // Start above mobile playback controls
+            function bringToTop(element) {
+                if (!element) return;
+                currentMaxZIndex++;
+                element.style.zIndex = currentMaxZIndex;
+                ui.playback.controls.style.zIndex = currentMaxZIndex + 1;
+
+                // Update playback context if a relevant panel is brought to top
+                if (element.id === 'animation-panel' || element.id === 'video-panel') {
+                    state.playback.mode = element.id === 'animation-panel' ? 'animation' : 'video';
+                    updatePlaybackContext();
+                    updatePlaybackUI();
+                }
+            }
+
+            // --- App State ---
+            let state = {
+                noodles: [], history: [], historyIndex: -1,
+                animationFrames: [], originalKeyframes: [], currentFrameIndex: -1,
+                view: { x: 0, y: 0, scale: 1 },
+                mouse: { x: 0, y: 0 }, lastPanPoint: { x: 0, y: 0 },
+                twoFingerDist: 0, draggedItem: { noodleIndex: -1, pointIndex: -1 },
+                frameToDelete: -1,
+                backgroundColor: '#ffffff',
+                isDrawing: false, isDragging: false, isPanning: false,
+                unsavedChanges: false,
+                playback: {
+                    mode: 'none', // 'animation' or 'video'
+                    isPlaying: false,
+                    interval: null,
+                    currentFrame: 0,
+                    totalFrames: 0,
+                    speed: 250, // for animation playback
+                }
+            };
+
+            // --- Constants ---
+            const NODE_SPACING = 10, FRICTION = 0.88, PHYSICS_ITERATIONS = 20, MAX_HISTORY_STATES = 50;
+
+            // --- Utility Functions ---
+            const distance = (p1, p2) => Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+            const createPoint = (x, y) => ({ x, y, old_x: x, old_y: y });
+            const deepCopy = (obj) => JSON.parse(JSON.stringify(obj));
+            function markUnsaved(isUnsaved = true) {
+                state.unsavedChanges = isUnsaved;
+            }
+
+            // --- History Management (Undo/Redo) ---
+            function saveHistoryState() {
+                if (state.historyIndex < state.history.length - 1) {
+                    state.history = state.history.slice(0, state.historyIndex + 1);
+                }
+                state.history.push(deepCopy(state.noodles));
+                if (state.history.length > MAX_HISTORY_STATES) state.history.shift();
+                state.historyIndex = state.history.length - 1;
+                updateUndoRedoButtons();
+                markUnsaved();
+            }
+
+            function loadHistoryState(index) {
+                if (index >= 0 && index < state.history.length) {
+                    state.historyIndex = index;
+                    state.noodles = deepCopy(state.history[state.historyIndex]);
+                    drawNoodles();
+                    updateUndoRedoButtons();
+                }
+            }
+
+            function updateUndoRedoButtons() {
+                ui.controls.undo.disabled = state.historyIndex <= 0;
+                ui.controls.redo.disabled = state.historyIndex >= state.history.length - 1;
+            }
+
+            // --- Canvas & Drawing ---
+            function resizeCanvas() {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+                drawNoodles();
+            }
+
+            function getEventPos(evt) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+                const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+                return {
+                    x: (clientX - rect.left - state.view.x) / state.view.scale,
+                    y: (clientY - rect.top - state.view.y) / state.view.scale
+                };
+            }
+
+            function drawNoodles() {
+                ctx.save();
+                ctx.fillStyle = state.backgroundColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(state.view.x, state.view.y);
+                ctx.scale(state.view.scale, state.view.scale);
+                state.noodles.forEach(drawNoodle);
+                ctx.restore();
+            }
+
+            function drawNoodle(noodle) {
+                if (noodle.points.length < 2) return;
+                ctx.beginPath();
+                ctx.moveTo(noodle.points[0].x, noodle.points[0].y);
+                ctx.strokeStyle = noodle.color;
+                ctx.lineWidth = noodle.width;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                if (noodle.points.length < 3) {
+                    ctx.lineTo(noodle.points[1].x, noodle.points[1].y);
+                } else {
+                    for (let i = 1; i < noodle.points.length - 2; i++) {
+                        const xc = (noodle.points[i].x + noodle.points[i + 1].x) / 2;
+                        const yc = (noodle.points[i].y + noodle.points[i + 1].y) / 2;
+                        ctx.quadraticCurveTo(noodle.points[i].x, noodle.points[i].y, xc, yc);
+                    }
+                    ctx.quadraticCurveTo(
+                        noodle.points[noodle.points.length - 2].x,
+                        noodle.points[noodle.points.length - 2].y,
+                        noodle.points[noodle.points.length - 1].x,
+                        noodle.points[noodle.points.length - 1].y
+                    );
+                }
+                ctx.stroke();
+            }
+
+            // --- Physics Engine ---
+            function updatePhysics() {
+                if (state.playback.isPlaying) return; // Don't run physics during any playback
+                state.noodles.forEach(noodle => {
+                    noodle.points.forEach(p => {
+                        const vx = (p.x - p.old_x) * FRICTION;
+                        const vy = (p.y - p.old_y) * FRICTION;
+                        p.old_x = p.x; p.old_y = p.y;
+                        p.x += vx; p.y += vy;
+                    });
+                });
+
+                for (let i = 0; i < PHYSICS_ITERATIONS; i++) {
+                    state.noodles.forEach(noodle => {
+                        for (let j = 0; j < noodle.points.length - 1; j++) {
+                            const p1 = noodle.points[j], p2 = noodle.points[j + 1];
+                            const dx = p2.x - p1.x, dy = p2.y - p1.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist === 0) continue;
+                            const diff = (NODE_SPACING - dist) / dist * 0.5;
+                            p1.x -= dx * diff; p1.y -= dy * diff;
+                            p2.x += dx * diff; p2.y += dy * diff;
+                        }
+                    });
+                }
+
+                if (state.isDragging && state.draggedItem.noodleIndex > -1) {
+                    const { noodleIndex, pointIndex } = state.draggedItem;
+                    if (state.noodles[noodleIndex] && state.noodles[noodleIndex].points[pointIndex]) {
+                        const point = state.noodles[noodleIndex].points[pointIndex];
+                        point.x = point.old_x = state.mouse.x;
+                        point.y = point.old_y = state.mouse.y;
+                    }
+                }
+            }
+
+            // --- Interaction ---
+            function findClosestPoint(pos) {
+                let closest = { noodleIndex: -1, pointIndex: -1, minDistance: Infinity };
+                for (let i = state.noodles.length - 1; i >= 0; i--) {
+                    const noodle = state.noodles[i];
+                    for (let j = 0; j < noodle.points.length; j++) {
+                        const d = distance(pos, noodle.points[j]);
+                        if (d < noodle.width / 2 + 15 && d < closest.minDistance) {
+                            closest = { noodleIndex: i, pointIndex: j, minDistance: d };
+                        }
+                    }
+                    if (closest.noodleIndex !== -1) break;
+                }
+                return closest;
+            }
+
+            function handleCanvasStart(e) {
+                if (state.playback.isPlaying) return;
+                e.preventDefault();
+                if (e.touches && e.touches.length === 2) {
+                    state.isPanning = true;
+                    state.twoFingerDist = distance(
+                        { x: e.touches[0].clientX, y: e.touches[0].clientY },
+                        { x: e.touches[1].clientX, y: e.touches[1].clientY }
+                    );
+                    state.lastPanPoint = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+                    return;
+                }
+                if (e.button === 1) { /* Middle mouse */
+                    state.isPanning = true;
+                    state.lastPanPoint = { x: e.clientX, y: e.clientY };
+                    return;
+                }
+
+                state.mouse = getEventPos(e);
+                const closest = findClosestPoint(state.mouse);
+
+                if (closest.noodleIndex !== -1) {
+                    state.isDragging = true;
+                    const noodleToMove = state.noodles.splice(closest.noodleIndex, 1)[0];
+                    state.noodles.push(noodleToMove);
+                    state.draggedItem = { noodleIndex: state.noodles.length - 1, pointIndex: closest.pointIndex };
+                    canvas.style.cursor = 'grabbing';
+                } else {
+                    state.isDrawing = true;
+                    state.noodles.push({
+                        points: [createPoint(state.mouse.x, state.mouse.y)],
+                        id: Date.now().toString(36) + Math.random().toString(36).substring(2), // Unique ID for noodle
+                        color: ui.controls.colorPicker.value,
+                        width: parseInt(ui.controls.widthSlider.value, 10),
+                    });
+                }
+                saveHistoryState();
+            }
+
+            function handleCanvasMove(e) {
+                if (state.playback.isPlaying) return;
+                e.preventDefault();
+                if (state.isPanning) {
+                    const currentPanPoint = e.touches ? { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 } : { x: e.clientX, y: e.clientY };
+                    if (e.touches && e.touches.length === 2) {
+                        const newDist = distance(
+                            { x: e.touches[0].clientX, y: e.touches[0].clientY },
+                            { x: e.touches[1].clientX, y: e.touches[1].clientY }
+                        );
+                        zoomAtPoint(newDist / state.twoFingerDist, currentPanPoint);
+                        state.twoFingerDist = newDist;
+                    }
+                    panCanvas(currentPanPoint.x - state.lastPanPoint.x, currentPanPoint.y - state.lastPanPoint.y);
+                    state.lastPanPoint = currentPanPoint;
+                    return;
+                }
+                if (!state.isDrawing && !state.isDragging) return;
+                state.mouse = getEventPos(e);
+                if (state.isDrawing) {
+                    const currentNoodle = state.noodles[state.noodles.length - 1];
+                    let lastPoint = currentNoodle.points[currentNoodle.points.length - 1];
+                    while (distance(state.mouse, lastPoint) > NODE_SPACING) {
+                        const angle = Math.atan2(state.mouse.y - lastPoint.y, state.mouse.x - lastPoint.x);
+                        const newPoint = createPoint(lastPoint.x + Math.cos(angle) * NODE_SPACING, lastPoint.y + Math.sin(angle) * NODE_SPACING);
+                        currentNoodle.points.push(newPoint);
+                        lastPoint = newPoint;
+                    }
+                }
+            }
+
+            function handleCanvasEnd() {
+                if (state.isDrawing || state.isDragging) saveHistoryState();
+                state.isDrawing = state.isDragging = state.isPanning = false;
+                state.draggedItem = { noodleIndex: -1, pointIndex: -1 };
+                canvas.style.cursor = 'crosshair';
+            }
+
+            function handleWheel(e) {
+                e.preventDefault();
+                zoomAtPoint(e.deltaY < 0 ? 1.1 : 1 / 1.1, { x: e.clientX, y: e.clientY });
+            }
+
+            function zoomAtPoint(scaleFactor, point) {
+                const newScale = Math.max(0.1, Math.min(state.view.scale * scaleFactor, 10));
+                const rect = canvas.getBoundingClientRect();
+                const worldX = (point.x - rect.left - state.view.x) / state.view.scale;
+                const worldY = (point.y - rect.top - state.view.y) / state.view.scale;
+                state.view.x = point.x - rect.left - worldX * newScale;
+                state.view.y = point.y - rect.top - worldY * newScale;
+                state.view.scale = newScale;
+                markUnsaved();
+            }
+
+            function panCanvas(dx, dy) {
+                state.view.x += dx; state.view.y += dy;
+                markUnsaved();
+            }
+
+            // --- Animation & Frames ---
+            function updateFrameUI() {
+                renderFramePreviews();
+                updateAnimationButtons();
+                saveLocalState();
+            }
+
+            function renderFramePreviews() {
+                ui.animation.previewsContainer.innerHTML = '';
+                state.animationFrames.forEach((frame, index) => {
+                    const container = document.createElement('div');
+                    container.className = 'frame-preview-container';
+                    container.dataset.index = index;
+                    const img = document.createElement('img');
+                    img.src = frame.thumbnail;
+                    img.className = 'frame-preview';
+                    if (index === state.currentFrameIndex) img.classList.add('active');
+                    if (index === state.frameToDelete) {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'delete-overlay';
+                        overlay.innerHTML = '&times;';
+                        container.appendChild(overlay);
+                    }
+                    container.appendChild(img);
+                    ui.animation.previewsContainer.appendChild(container);
+                });
+            }
+
+            function resetInterpolationState() {
+                state.originalKeyframes = [];
+                ui.animation.interpolateButton.disabled = false;
+                ui.animation.revertInterpolationButton.classList.add('hidden');
+            }
+
+            function loadFrame(index) {
+                if (index < 0 || index >= state.animationFrames.length) return;
+
+                // When loading a new frame, always clear any pending deletion intent.
+                state.frameToDelete = -1;
+
+                state.currentFrameIndex = index;
+                state.playback.currentFrame = index;
+                const frame = state.animationFrames[index];
+                state.noodles = deepCopy(frame.noodles);
+                state.view = deepCopy(frame.view);
+                updateFrameUI();
+                updatePlaybackUI();
+                state.history = [deepCopy(state.noodles)];
+                state.historyIndex = 0;
+                updateUndoRedoButtons();
+            }
+
+            function takeSnapshot() {
+                resetInterpolationState();
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.width = 80; thumbCanvas.height = 80;
+                const thumbCtx = thumbCanvas.getContext('2d');
+                thumbCtx.fillStyle = state.backgroundColor;
+                thumbCtx.fillRect(0, 0, 80, 80);
+                thumbCtx.drawImage(canvas, 0, 0, 80, 80);
+
+                const newFrame = {
+                    noodles: deepCopy(state.noodles),
+                    thumbnail: thumbCanvas.toDataURL(),
+                    view: deepCopy(state.view),
+                };
+
+                const insertionIndex = state.currentFrameIndex + 1;
+                state.animationFrames.splice(insertionIndex, 0, newFrame);
+                loadFrame(insertionIndex);
+                markUnsaved();
+                updatePlaybackContext();
+            }
+
+            function duplicateCurrentFrame() {
+                if (state.animationFrames.length === 0 || state.currentFrameIndex < 0) return;
+                resetInterpolationState();
+                const currentFrameCopy = deepCopy(state.animationFrames[state.currentFrameIndex]);
+                state.animationFrames.splice(state.currentFrameIndex + 1, 0, currentFrameCopy);
+                loadFrame(state.currentFrameIndex + 1);
+                markUnsaved();
+            }
+
+            function deleteFrame(index) {
+                resetInterpolationState();
+                stopGenericPlayback();
+
+                state.animationFrames.splice(index, 1);
+
+                // Select the frame that takes the deleted one's place, or the last frame if it was the end.
+                let newIndexToLoad = index;
+                if (newIndexToLoad >= state.animationFrames.length) {
+                    newIndexToLoad = state.animationFrames.length - 1;
+                }
+
+                state.frameToDelete = -1;
+                markUnsaved();
+
+                if (state.animationFrames.length > 0) {
+                    loadFrame(newIndexToLoad);
+                } else {
+                    clearProject(false);
+                }
+                updatePlaybackContext();
+            }
+
+            // --- Interpolation & Tweening Logic ---
+            function hexToRgb(hex) {
+                if (!hex) return null;
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+            }
+
+            function rgbToHex(r, g, b) {
+                return "#" + ((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1).padStart(6, '0');
+            }
+
+            function getTweenedFrameState(startFrame, endFrame, t_progress_0_to_1) {
+                TWEEN.removeAll();
+
+                if (t_progress_0_to_1 >= 1.0) return deepCopy(endFrame);
+                if (t_progress_0_to_1 <= 0.0) return deepCopy(startFrame);
+
+                let tempFrameState = deepCopy(startFrame);
+                const DUMMY_TWEEN_DURATION = 100;
+
+                const tweens = [];
+
+                for (let k = 0; k < startFrame.noodles.length; k++) {
+                    const startNoodle = startFrame.noodles[k];
+                    const endNoodle = endFrame.noodles.find(n => n.id === startNoodle.id);
+
+                    if (!endNoodle || startNoodle.points.length !== endNoodle.points.length) continue;
+
+                    const currentTweeningNoodle = tempFrameState.noodles.find(n => n.id === startNoodle.id);
+                    if (!currentTweeningNoodle) continue;
+
+                    const startColorRGB = hexToRgb(startNoodle.color);
+                    const endColorRGB = hexToRgb(endNoodle.color);
+                    if (startColorRGB && endColorRGB) {
+                        let liveColorRGB = { ...startColorRGB };
+                        tweens.push(
+                            new TWEEN.Tween(liveColorRGB)
+                                .to(endColorRGB, DUMMY_TWEEN_DURATION)
+                                .easing(TWEEN.Easing.Quadratic.InOut)
+                                .onUpdate(() => {
+                                    currentTweeningNoodle.color = rgbToHex(liveColorRGB.r, liveColorRGB.g, liveColorRGB.b);
+                                })
+                        );
+                    }
+
+                    tweens.push(
+                        new TWEEN.Tween(currentTweeningNoodle)
+                            .to({ width: endNoodle.width }, DUMMY_TWEEN_DURATION)
+                            .easing(TWEEN.Easing.Quadratic.InOut)
+                    );
+
+                    for (let p = 0; p < startNoodle.points.length; p++) {
+                        if (currentTweeningNoodle.points[p] && endNoodle.points[p]) {
+                            tweens.push(
+                                new TWEEN.Tween(currentTweeningNoodle.points[p])
+                                    .to({ x: endNoodle.points[p].x, y: endNoodle.points[p].y }, DUMMY_TWEEN_DURATION)
+                                    .easing(TWEEN.Easing.Quadratic.InOut)
+                            );
+                        }
+                    }
+                }
+
+                tweens.forEach(tween => tween.start(0));
+                TWEEN.update(t_progress_0_to_1 * DUMMY_TWEEN_DURATION);
+
+                TWEEN.removeAll();
+                return tempFrameState;
+            }
+
+
+            function interpolateFrames() {
+                const framesToAdd = parseInt(ui.animation.interpolateCount.value, 10);
+                if (isNaN(framesToAdd) || framesToAdd < 1) {
+                    return showModal("Invalid Input", "Please enter a valid number of frames to add (1 or more).");
+                }
+                if (state.animationFrames.length < 2) {
+                    return showModal("Not Enough Keyframes", "You need at least two keyframes to interpolate between.");
+                }
+
+                const original_currentFrameIndex_before_interpolation = state.currentFrameIndex;
+
+                state.originalKeyframes = deepCopy(state.animationFrames);
+
+                const newFrames = [];
+                const keyframesForThisPass = state.originalKeyframes;
+
+                for (let i = 0; i < keyframesForThisPass.length - 1; i++) {
+                    const startFrame = keyframesForThisPass[i];
+                    const endFrame = keyframesForThisPass[i + 1];
+                    newFrames.push(deepCopy(startFrame));
+
+                    for (let j = 1; j <= framesToAdd; j++) {
+                        const t = j / (framesToAdd + 1);
+                        const tweenedState = getTweenedFrameState(startFrame, endFrame, t);
+                        newFrames.push({ ...tweenedState, thumbnail: '' });
+                    }
+                }
+                newFrames.push(deepCopy(keyframesForThisPass[keyframesForThisPass.length - 1]));
+
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.width = 80; thumbCanvas.height = 80;
+                const thumbCtx = thumbCanvas.getContext('2d');
+                const tempRestoreState = {
+                    noodles: deepCopy(state.noodles),
+                    view: deepCopy(state.view),
+                    backgroundColor: state.backgroundColor
+                };
+
+                newFrames.forEach(frame => {
+                    if (!frame.thumbnail) {
+                        state.noodles = frame.noodles;
+                        state.view = frame.view;
+                        drawNoodles();
+                        thumbCtx.fillStyle = tempRestoreState.backgroundColor;
+                        thumbCtx.fillRect(0, 0, 80, 80);
+                        thumbCtx.drawImage(canvas, 0, 0, 80, 80);
+                        frame.thumbnail = thumbCanvas.toDataURL();
+                    }
+                });
+
+                state.noodles = tempRestoreState.noodles;
+                state.view = tempRestoreState.view;
+                drawNoodles();
+
+                state.animationFrames = newFrames;
+
+                let newSelectedFrameIndex = 0;
+                if (original_currentFrameIndex_before_interpolation >= 0 && original_currentFrameIndex_before_interpolation < keyframesForThisPass.length) {
+                    newSelectedFrameIndex = original_currentFrameIndex_before_interpolation * (framesToAdd + 1);
+                }
+                newSelectedFrameIndex = Math.min(newSelectedFrameIndex, state.animationFrames.length - 1);
+                newSelectedFrameIndex = Math.max(0, newSelectedFrameIndex);
+
+                loadFrame(newSelectedFrameIndex);
+
+                ui.animation.interpolateButton.disabled = true;
+                ui.animation.revertInterpolationButton.classList.remove('hidden');
+                showModal("Animation Smoothed", `Used Tween.js to add ${framesToAdd} frames between each keyframe. You can revert this change.`);
+            }
+
+            function revertInterpolation() {
+                if (state.originalKeyframes.length > 0) {
+                    state.animationFrames = deepCopy(state.originalKeyframes);
+                    const newIndex = Math.min(state.currentFrameIndex, state.animationFrames.length - 1);
+                    resetInterpolationState();
+                    loadFrame(newIndex < 0 && state.animationFrames.length > 0 ? 0 : newIndex);
+                }
+            }
+
+            // --- Save/Load & Export ---
+            function saveProject() {
+                const framesToSave = state.originalKeyframes.length > 0 ? state.originalKeyframes : state.animationFrames;
+                const dataToSave = JSON.stringify({
+                    frames: framesToSave,
+                    backgroundColor: state.backgroundColor
+                });
+                const blob = new Blob([dataToSave], { type: "application/json" });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `noodle-project-${Date.now()}.json`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+                markUnsaved(false);
+            }
+
+            function loadProjectFile(file) {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (!data || !Array.isArray(data.frames)) throw new Error("Invalid format");
+                        stopGenericPlayback();
+                        resetInterpolationState();
+                        state.animationFrames = data.frames;
+                        state.backgroundColor = data.backgroundColor || '#ffffff';
+                        ui.controls.backgroundColorPicker.value = state.backgroundColor;
+                        document.getElementById('canvas-container').style.backgroundColor = state.backgroundColor;
+                        canvas.style.backgroundColor = state.backgroundColor;
+
+                        if (state.animationFrames.length > 0) loadFrame(0); else clearProject(false);
+                        markUnsaved(false);
+                        updatePlaybackContext();
+                    } catch (err) {
+                        showModal("Load Failed", "The project file is invalid or corrupted.");
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            function clearProject(confirm = true) {
+                const performClear = () => {
+                    stopGenericPlayback();
+                    resetInterpolationState();
+                    state.noodles = []; state.animationFrames = [];
+                    state.currentFrameIndex = -1; state.view = { x: 0, y: 0, scale: 1 };
+                    state.backgroundColor = '#ffffff';
+                    ui.controls.backgroundColorPicker.value = state.backgroundColor;
+                    document.getElementById('canvas-container').style.backgroundColor = state.backgroundColor;
+                    canvas.style.backgroundColor = state.backgroundColor;
+
+                    state.history = [deepCopy(state.noodles)]; state.historyIndex = 0;
+                    updateFrameUI();
+                    updatePlaybackContext();
+                    markUnsaved(false);
+                };
+                if (confirm) {
+                    showModal("Clear Project", "Are you sure? This will delete all drawings and frames.",
+                        [{ text: "Clear", class: "btn-red", action: performClear }, { text: "Cancel" }]
+                    );
+                } else {
+                    performClear();
+                }
+            }
+
+            function exportPNG() {
+                document.querySelectorAll('.draggable, .panel').forEach(el => el.style.visibility = 'hidden');
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.download = 'noodle-art.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    document.querySelectorAll('.draggable, .panel').forEach(el => el.style.visibility = 'visible');
+                }, 100);
+            }
+
+            function exportGIF() {
+                if (state.animationFrames.length < 2) {
+                    return showModal("GIF Export", "You need at least two frames to create a GIF.");
+                }
+                ui.controls.exportGif.disabled = true;
+                ui.controls.exportGif.textContent = "Rendering...";
+
+                setTimeout(() => {
+                    try {
+                        const encoder = new GIFEncoder();
+                        encoder.setRepeat(0);
+                        encoder.setDelay(state.playback.speed);
+                        encoder.start();
+
+                        const originalState = { noodles: deepCopy(state.noodles), view: deepCopy(state.view), currentFrameIndex: state.currentFrameIndex };
+                        stopGenericPlayback();
+
+                        state.animationFrames.forEach(frame => {
+                            state.noodles = deepCopy(frame.noodles);
+                            state.view = deepCopy(frame.view);
+                            drawNoodles();
+                            encoder.addFrame(ctx);
+                        });
+
+                        encoder.finish();
+                        const binaryGif = encoder.stream().getData();
+                        const dataUrl = 'data:image/gif;base64,' + btoa(binaryGif);
+
+                        const link = document.createElement('a');
+                        link.href = dataUrl;
+                        link.download = 'noodle-animation.gif';
+                        link.click();
+
+                        // Restore canvas to its original state before rendering
+                        state.noodles = originalState.noodles;
+                        state.view = originalState.view;
+                        loadFrame(originalState.currentFrameIndex > -1 ? originalState.currentFrameIndex : 0);
+
+                    } catch (error) {
+                        console.error("GIF Export failed", error);
+                        showModal("GIF Export Error", "An unexpected error occurred. Check the console for details.");
+                    } finally {
+                        ui.controls.exportGif.disabled = false;
+                        ui.controls.exportGif.textContent = "GIF";
+                    }
+                }, 50);
+            }
+
+            // --- Video Generation ---
+            function generateVideo() {
+                const duration = parseFloat(ui.video.lengthInput.value);
+                const fps = parseInt(ui.video.fpsInput.value, 10);
+
+                const keyframes = state.originalKeyframes.length > 0 ? state.originalKeyframes : state.animationFrames;
+
+                if (keyframes.length < 2) {
+                    return showModal("Video Generation Error", "You need at least two animation keyframes to generate a video.");
+                }
+                if (isNaN(duration) || duration <= 0 || isNaN(fps) || fps <= 0 || fps > 60) {
+                    return showModal("Invalid Input", "Please enter valid numbers. Duration must be positive, and FPS must be between 1 and 60.");
+                }
+
+                const totalVideoFrames = Math.ceil(duration * fps);
+                let videoFrameCounter = 0;
+                const recordedChunks = [];
+
+                ui.video.generateButton.disabled = true;
+                ui.video.statusMessage.textContent = 'Preparing to record...';
+                ui.video.statusMessage.classList.remove('hidden');
+
+                const stream = canvas.captureStream(fps);
+                const recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+
+                recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks.push(event.data);
+                };
+
+                recorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+
+                    ui.video.generateButton.disabled = false;
+                    ui.video.statusMessage.textContent = 'Video ready!';
+
+                    const downloadButton = {
+                        text: "Download Video",
+                        class: "btn-green",
+                        action: () => {
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = `noodle-video-${Date.now()}.webm`;
+                            link.click();
+                        }
+                    };
+                    const closeButton = { text: "Close", action: () => URL.revokeObjectURL(url) };
+                    showModal("Recording Complete", "Your video has been generated.", [downloadButton, closeButton]);
+                };
+
+                const originalState = {
+                    noodles: deepCopy(state.noodles),
+                    view: deepCopy(state.view),
+                    currentFrameIndex: state.currentFrameIndex,
+                    playback: deepCopy(state.playback)
+                };
+                stopGenericPlayback();
+
+                setTimeout(() => {
+                    recorder.start();
+
+                    const renderVideoFrame = () => {
+                        if (videoFrameCounter >= totalVideoFrames) {
+                            recorder.stop();
+                            state.noodles = originalState.noodles;
+                            state.view = originalState.view;
+                            state.playback = originalState.playback;
+                            drawNoodles();
+                            if (originalState.currentFrameIndex > -1) {
+                                loadFrame(originalState.currentFrameIndex);
+                            }
+                            return;
+                        }
+
+                        const overallProgress = totalVideoFrames === 1 ? 0 : videoFrameCounter / (totalVideoFrames - 1);
+                        const keyframeProgress = overallProgress * (keyframes.length - 1);
+
+                        const startKeyframeIndex = Math.floor(keyframeProgress);
+                        const endKeyframeIndex = Math.min(startKeyframeIndex + 1, keyframes.length - 1);
+
+                        const t_between_keyframes = keyframeProgress - startKeyframeIndex;
+
+                        const startFrame = keyframes[startKeyframeIndex];
+                        const endFrame = keyframes[endKeyframeIndex];
+
+                        const tweenedState = getTweenedFrameState(startFrame, endFrame, t_between_keyframes);
+                        state.noodles = tweenedState.noodles;
+                        state.view = tweenedState.view;
+                        drawNoodles();
+
+                        const progressPercent = Math.round((videoFrameCounter / totalVideoFrames) * 100);
+                        ui.video.statusMessage.textContent = `Rendering... ${progressPercent}%`;
+                        videoFrameCounter++;
+
+                        requestAnimationFrame(renderVideoFrame);
+                    };
+
+                    renderVideoFrame();
+
+                }, 100);
+            }
+
+            // --- Playback Logic ---
+
+            function updatePlaybackUI() {
+                renderFramePreviews(); // Always update previews to show active frame
+
+                ui.playback.frameSlider.value = state.playback.currentFrame;
+                ui.playback.frameSlider.max = Math.max(0, state.playback.totalFrames - 1);
+                ui.playback.frameCount.textContent = `${state.playback.totalFrames > 0 ? state.playback.currentFrame + 1 : 0}/${state.playback.totalFrames}`;
+            }
+
+            function displayVideoPreviewFrame(frameNumber) {
+                if (state.playback.mode !== 'video') return;
+
+                const keyframes = state.originalKeyframes.length > 0 ? state.originalKeyframes : state.animationFrames;
+                if (keyframes.length < 2) return;
+
+                state.playback.currentFrame = Math.max(0, Math.min(frameNumber, state.playback.totalFrames - 1));
+
+                // Since video frames don't map 1:1 with keyframes, we find the "closest" keyframe to highlight
+                const overallProgress = state.playback.totalFrames === 1 ? 0 : state.playback.currentFrame / (state.playback.totalFrames - 1);
+                state.currentFrameIndex = Math.round(overallProgress * (keyframes.length - 1));
+
+                const keyframeProgress = overallProgress * (keyframes.length - 1);
+                const startKeyframeIndex = Math.floor(keyframeProgress);
+                const endKeyframeIndex = Math.min(startKeyframeIndex + 1, keyframes.length - 1);
+                const t_between_keyframes = keyframeProgress - startKeyframeIndex;
+
+                const startFrame = keyframes[startKeyframeIndex];
+                const endFrame = keyframes[endKeyframeIndex];
+
+                const tweenedState = getTweenedFrameState(startFrame, endFrame, t_between_keyframes);
+                state.noodles = tweenedState.noodles;
+                state.view = tweenedState.view;
+                drawNoodles();
+                updatePlaybackUI();
+            }
+
+            function startGenericPlayback() {
+                if (state.playback.isPlaying || state.playback.mode === 'none') return;
+
+                state.playback.isPlaying = true;
+                ui.playback.playIcon.classList.add('hidden');
+                ui.playback.pauseIcon.classList.remove('hidden');
+
+                const loop = () => {
+                    if (!state.playback.isPlaying) return;
+
+                    let nextFrame = (state.playback.currentFrame + 1);
+                    if (nextFrame >= state.playback.totalFrames) {
+                        nextFrame = 0;
+                    }
+
+
+                    if (state.playback.mode === 'animation') {
+                        loadFrame(nextFrame);
+                    } else if (state.playback.mode === 'video') {
+                        displayVideoPreviewFrame(nextFrame);
+                    }
+                };
+
+                const speed = state.playback.mode === 'animation'
+                    ? state.playback.speed
+                    : 1000 / parseInt(ui.video.fpsInput.value, 10);
+
+                state.playback.interval = setInterval(loop, speed);
+            }
+
+            function stopGenericPlayback() {
+                if (!state.playback.isPlaying) return;
+                state.playback.isPlaying = false;
+                ui.playback.playIcon.classList.remove('hidden');
+                ui.playback.pauseIcon.classList.add('hidden');
+                clearInterval(state.playback.interval);
+            }
+
+            // This is the new central function for managing the playback controls
+            function updatePlaybackContext() {
+                stopGenericPlayback();
+
+                const isAnimMode = ui.controls.animationModeToggle.checked;
+                const isVideoMode = ui.controls.videoModeToggle.checked;
+
+                const animZ = parseInt(ui.animation.panel.style.zIndex) || 0;
+                const videoZ = parseInt(ui.video.panel.style.zIndex) || 0;
+                const isAnimVisible = ui.animation.panel.style.display !== 'none';
+                const isVideoVisible = ui.video.panel.style.display !== 'none';
+
+                let newMode = 'none';
+
+                if (isAnimVisible && isVideoVisible) {
+                    newMode = animZ > videoZ ? 'animation' : 'video';
+                } else if (isAnimVisible) {
+                    newMode = 'animation';
+                } else if (isVideoVisible) {
+                    newMode = 'video';
+                }
+
+                // Set context based on determined mode
+                state.playback.mode = newMode;
+                switch (state.playback.mode) {
+                    case 'animation':
+                        ui.playback.controls.classList.add('animation-mode');
+                        ui.playback.controls.classList.remove('video-mode');
+                        state.playback.totalFrames = state.animationFrames.length;
+                        state.playback.currentFrame = state.currentFrameIndex > -1 ? state.currentFrameIndex : 0;
+                        break;
+                    case 'video':
+                        const keyframes = state.originalKeyframes.length > 0 ? state.originalKeyframes : state.animationFrames;
+                        ui.playback.controls.classList.add('video-mode');
+                        ui.playback.controls.classList.remove('animation-mode');
+                        const duration = parseFloat(ui.video.lengthInput.value) || 1;
+                        const fps = parseInt(ui.video.fpsInput.value, 10) || 30;
+                        state.playback.totalFrames = state.animationFrames.length === 0 ? 0 : Math.ceil(duration * fps);
+                        state.playback.currentFrame = 0;
+                        displayVideoPreviewFrame(0);
+                        break;
+                }
+
+                updatePlaybackUI();
+            }
+
+            // --- UI & Modal ---
+            function showModal(title, message, buttons = [{ text: "OK" }]) {
+                ui.modal.title.textContent = title;
+                ui.modal.message.textContent = message;
+                ui.modal.buttons.innerHTML = '';
+                buttons.forEach(btnConfig => {
+                    const button = document.createElement('button');
+                    button.textContent = btnConfig.text;
+                    button.className = `button ${btnConfig.class || 'btn-gray'}`;
+                    button.onclick = () => {
+                        ui.modal.overlay.style.display = 'none';
+                        if (btnConfig.action) btnConfig.action();
+                    };
+                    ui.modal.buttons.appendChild(button);
+                });
+                ui.modal.overlay.style.display = 'flex';
+            }
+
+            function checkUnsavedWork(nextAction) {
+                if (state.unsavedChanges) {
+                    showModal("Unsaved Changes", "Continue without saving?", [
+                        { text: "Continue", class: "btn-red", action: nextAction }, { text: "Cancel" }
+                    ]);
+                } else { nextAction(); }
+            }
+
+            function updateAnimationButtons() {
+                const hasFrames = state.animationFrames.length > 0;
+                const hasKeyframes = state.originalKeyframes.length > 0;
+                ui.controls.exportGif.disabled = state.animationFrames.length < 2;
+                ui.animation.duplicateFrame.disabled = !hasFrames || hasKeyframes;
+                ui.animation.clearFrames.disabled = !hasFrames;
+                ui.animation.interpolateButton.disabled = !hasFrames || hasKeyframes;
+            }
+
+            // --- Persistent State ---
+            function saveLocalState() {
+                try {
+                    localStorage.setItem('noodleArtState', JSON.stringify({
+                        animationMode: ui.controls.animationModeToggle.checked,
+                        videoMode: ui.controls.videoModeToggle.checked,
+                        frames: state.originalKeyframes.length > 0 ? state.originalKeyframes : state.animationFrames,
+                        backgroundColor: state.backgroundColor
+                    }));
+                } catch (e) { console.error("Could not save state", e); }
+            }
+
+            function loadLocalState() {
+                try {
+                    const savedState = localStorage.getItem('noodleArtState');
+                    if (!savedState) { clearProject(false); return; };
+                    const parsed = JSON.parse(savedState);
+                    ui.controls.animationModeToggle.checked = parsed.animationMode || false;
+                    ui.controls.videoModeToggle.checked = parsed.videoMode || false;
+
+                    state.animationFrames = parsed.frames || [];
+                    state.backgroundColor = parsed.backgroundColor || '#ffffff';
+                    ui.controls.backgroundColorPicker.value = state.backgroundColor;
+                    document.getElementById('canvas-container').style.backgroundColor = state.backgroundColor;
+                    canvas.style.backgroundColor = state.backgroundColor;
+
+                    toggleAnimationModeUI(ui.controls.animationModeToggle.checked);
+                    toggleVideoModeUI(ui.controls.videoModeToggle.checked);
+                    togglePlaybackToggleVisible();
+
+                    if (state.animationFrames.length > 0) loadFrame(0); else clearProject(false);
+                    markUnsaved(false);
+                } catch (e) { clearProject(false); }
+            }
+
+            // --- UI Initialization & Toggling ---
+            function toggleUIElement(element) {
+                const isOpen = !(['none', ''].includes(element.style.display));
+                element.style.display = isOpen ? 'none' : 'flex';
+                if (!isOpen) {
+                    bringToTop(element); // This will also update playback context
+                } else {
+                    updatePlaybackContext(); // Update context on close as well
+                }
+            }
+
+            function toggleAnimationModeUI(isModeOn) {
+                [ui.animation.toggle, ui.animation.snapshot].forEach(el => {
+                    el.style.display = isModeOn ? 'flex' : 'none';
+                });
+
+                if (!isModeOn && ui.animation.panel.style.display !== 'none') {
+                    ui.animation.panel.style.display = 'none';
+                }
+                updateAnimationButtons();
+                updatePlaybackContext();
+            }
+
+            function toggleVideoModeUI(isModeOn) {
+                ui.video.toggle.style.display = isModeOn ? 'flex' : 'none';
+                if (!isModeOn && ui.video.panel.style.display !== 'none') {
+                    ui.video.panel.style.display = 'none';
+                }
+                updatePlaybackContext();
+            }
+
+            function togglePlaybackToggleVisible() {
+                ui.playback.toggle.style.display = ui.controls.animationModeToggle.checked || ui.controls.videoModeToggle.checked ? 'flex' : 'none';
+            }
+
+            function deleteFrameListener(event) {
+                const container = event.target.closest('.frame-preview-container');
+                if (!container) return;
+
+                const indexStr = container.dataset.index;
+                // Robustness: Ensure indexStr is valid before parsing
+                if (indexStr === null || indexStr === undefined) return;
+
+                const index = parseInt(indexStr, 10);
+                if (isNaN(index)) return; // Prevent errors if index is not a number
+
+                stopGenericPlayback();
+
+                if (state.frameToDelete === index) {
+                    // This frame was already marked for deletion, so delete it.
+                    deleteFrame(index);
+                } else if (state.currentFrameIndex === index) {
+                    // This is the active frame, mark it for deletion.
+                    state.frameToDelete = index;
+                    renderFramePreviews(); // Re-render to show the delete overlay
+                } else {
+                    // This is not the active frame. Just load it.
+                    // `loadFrame` will automatically clear the "to delete" state.
+                    loadFrame(index);
+                }
+            }
+
+            // --- Event Listeners ---
+            function setupEventListeners() {
+                window.addEventListener('resize', resizeCanvas);
+                ['mousedown', 'touchstart'].forEach(evt => canvas.addEventListener(evt, handleCanvasStart, { passive: false }));
+                ['mousemove', 'touchmove'].forEach(evt => canvas.addEventListener(evt, handleCanvasMove, { passive: false }));
+                ['mouseup', 'touchend'].forEach(evt => window.addEventListener(evt, handleCanvasEnd));
+                canvas.addEventListener('wheel', handleWheel, { passive: false });
+
+                // --- Interact.js Dragging Logic ---_
+                function dragMoveListener(event) {
+                    const target = event.target;
+                    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                    target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+                    target.setAttribute('data-x', x);
+                    target.setAttribute('data-y', y);
+                }
+                // window.dragMoveListener = dragMoveListener;
+
+                interact('.draggable')
+                    .draggable({
+                        inertia: true,
+                        modifiers: [
+                            interact.modifiers.restrictRect({
+                                restriction: 'parent',
+                                endOnly: true
+                            })
+                        ],
+                        autoScroll: false,
+                        listeners: { move: dragMoveListener },
+                        //     // allowFrom: '.panel-header' // For panels
+                    })
+                    .on('dragstart', (event) => {
+                        bringToTop(event.target);
+                    })
+                    .on('tap', (event) => {
+                        const target = event.currentTarget;
+                        switch (target.id) {
+                            case 'controls-toggle': toggleUIElement(ui.controls.panel); break;
+                            case 'animation-toggle': toggleUIElement(ui.animation.panel); break;
+                            case 'video-toggle': toggleUIElement(ui.video.panel); break;
+                            case 'floating-snapshot-button': takeSnapshot(); break;
+                        }
+                        if (target.classList.contains('panel')) {
+                            bringToTop(target);
+                            if (target.id === 'animation-panel')
+                                deleteFrameListener(event);
+                        }
+                    });
+
+                // Panels close buttons
+                ui.controls.close.addEventListener('click', () => { ui.controls.panel.style.display = 'none'; updatePlaybackContext(); });
+                ui.animation.close.addEventListener('click', () => { ui.animation.panel.style.display = 'none'; updatePlaybackContext(); });
+                ui.video.close.addEventListener('click', () => { ui.video.panel.style.display = 'none'; updatePlaybackContext(); });
+
+                // Controls
+                ui.controls.newProject.addEventListener('click', () => checkUnsavedWork(() => clearProject()));
+                ui.controls.saveProject.addEventListener('click', saveProject);
+                ui.controls.loadProject.addEventListener('click', () => checkUnsavedWork(() => ui.controls.loadProjectInput.click()));
+                ui.controls.loadProjectInput.addEventListener('change', (e) => loadProjectFile(e.target.files[0]));
+                ui.controls.backgroundColorPicker.addEventListener('input', (e) => {
+                    state.backgroundColor = e.target.value;
+                    document.getElementById('canvas-container').style.backgroundColor = state.backgroundColor;
+                    canvas.style.backgroundColor = state.backgroundColor;
+                    drawNoodles();
+                    markUnsaved();
+                });
+                ui.controls.widthSlider.addEventListener('input', (e) => ui.controls.widthValue.textContent = e.target.value);
+                ui.controls.clearCanvas.addEventListener('click', () => showModal("Clear Drawing", "Are you sure? This will discard your current drawing.", [{ text: "Clear", class: "btn-red", action: () => { state.noodles = []; drawNoodles(); saveHistoryState(); } }, { text: "Cancel" }]));
+                ui.controls.undo.addEventListener('click', () => loadHistoryState(state.historyIndex - 1));
+                ui.controls.redo.addEventListener('click', () => loadHistoryState(state.historyIndex + 1));
+                ui.controls.exportPng.addEventListener('click', exportPNG);
+                ui.controls.exportGif.addEventListener('click', exportGIF);
+                ui.controls.animationModeToggle.addEventListener('change', e => {
+                    toggleAnimationModeUI(e.target.checked);
+                    togglePlaybackToggleVisible();
+                    saveLocalState();
+                });
+                ui.controls.videoModeToggle.addEventListener('change', e => {
+                    toggleVideoModeUI(e.target.checked);
+                    togglePlaybackToggleVisible();
+                    saveLocalState();
+                });
+
+                // Animation
+                ui.animation.interpolateButton.addEventListener('click', interpolateFrames);
+                ui.animation.revertInterpolationButton.addEventListener('click', revertInterpolation);
+                ui.animation.duplicateFrame.addEventListener('click', duplicateCurrentFrame);
+                ui.animation.clearFrames.addEventListener('click', () => showModal("Clear All Frames", "Are you sure? This will delete all animation frames.", [{ text: "Clear All", class: "btn-red", action: () => clearProject(false) }, { text: "Cancel" }]));
+
+                // Video
+                ui.video.generateButton.addEventListener('click', generateVideo);
+                [ui.video.lengthInput, ui.video.fpsInput].forEach(input => {
+                    input.addEventListener('change', () => {
+                        if (ui.video.panel.style.display !== 'none') {
+                            updatePlaybackContext();
+                        }
+                    });
+                });
+
+                // Playback Actions
+                ui.playback.toggle.addEventListener('click', () => ui.playback.controls.style.display = ui.playback.controls.style.display === 'flex' ? 'none' : 'flex');
+                ui.playback.playPause.addEventListener('click', () => state.playback.isPlaying ? stopGenericPlayback() : startGenericPlayback());
+                ui.playback.prevFrame.addEventListener('click', () => {
+                    stopGenericPlayback();
+                    let newFrame = state.playback.currentFrame - 1;
+                    if (newFrame < 0) newFrame = state.playback.totalFrames - 1; // wrap around
+                    if (state.playback.mode === 'animation') loadFrame(newFrame);
+                    else if (state.playback.mode === 'video') displayVideoPreviewFrame(newFrame);
+                });
+                ui.playback.nextFrame.addEventListener('click', () => {
+                    stopGenericPlayback();
+                    const newFrame = (state.playback.currentFrame + 1) % state.playback.totalFrames;
+                    if (state.playback.mode === 'animation') loadFrame(newFrame);
+                    else if (state.playback.mode === 'video') displayVideoPreviewFrame(newFrame);
+                });
+                ui.playback.frameSlider.addEventListener('input', (e) => {
+                    stopGenericPlayback();
+                    const frame = parseInt(e.target.value, 10);
+                    if (state.playback.mode === 'animation') loadFrame(frame);
+                    else if (state.playback.mode === 'video') displayVideoPreviewFrame(frame);
+                });
+                ui.playback.speedSlider.addEventListener('input', e => {
+                    state.playback.speed = 520 - ((parseInt(e.target.value, 10) - 1) / 9) * 500;
+                    if (state.playback.isPlaying && state.playback.mode === 'animation') {
+                        stopGenericPlayback();
+                        startGenericPlayback();
+                    }
+                });
+
+                // Global Click
+                document.body.addEventListener('click', (e) => {
+                    if (!e.target.closest('.panel, .frame-preview-container, .floating-button, .draggable')) {
+                        if (state.frameToDelete !== -1) {
+                            state.frameToDelete = -1; renderFramePreviews();
+                        }
+                    }
+                });
+            }
+
+            // --- Main Execution ---
+            function main() {
+                setupEventListeners();
+                resizeCanvas();
+                ui.controls.toggle.style.display = 'flex'; // Show main toggle on load
+                loadLocalState();
+                const animate = () => {
+                    updatePhysics();
+                    drawNoodles();
+                    requestAnimationFrame(animate);
+                };
+                animate();
+            }
+            main();
+        });
+    </script>
+</body>
+
+</html>
